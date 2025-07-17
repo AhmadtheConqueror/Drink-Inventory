@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Reports | Belloson Drinks Inventory</title>
+    <!-- Bootstrap for grid layout -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+    <button id="darkModeToggle" style="position: fixed; top: 15px; right: 20px; z-index: 1000;">
+        🌙 Toggle Dark Mode
+    </button>
+    <style>
+        .profit { color: #28a745; font-weight: 600; }
+        .loss { color: #dc3545; font-weight: 600; }
+        .summary-card {
+            background-color: #fff;
+            padding: 1.25rem;
+            border-radius: 0.75rem;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 100%;
+        }
+        .summary-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        .summary-card h3 {
+            font-size: 1rem;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+        .summary-card p {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 0;
+            color: var(--primary-blue);
+        }
+        body.dark-mode .summary-card {
+            background-color: var(--card-bg-dark);
+            border: 1px solid #333;
+        }
+        body.dark-mode .summary-card h3 {
+            color: #adb5bd;
+        }
+        body.dark-mode .summary-card p {
+            color: #a9cfff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Financial Reports</h1>
+
+        <div class="tabs">
+            <a href="{{ url_for('inventory') }}" class="tab {% if request.endpoint == 'inventory' %}active{% endif %}">Inventory</a>
+            <a href="{{ url_for('products') }}" class="tab {% if request.endpoint == 'products' %}active{% endif %}">Products</a>
+            <a href="{{ url_for('customers') }}" class="tab {% if request.endpoint == 'customers' %}active{% endif %}">Customers</a>
+            <a href="{{ url_for('invoices') }}" class="tab {% if request.endpoint == 'invoices' %}active{% endif %}">Invoices</a>
+            <a href="{{ url_for('expenses') }}" class="tab {% if request.endpoint == 'expenses' %}active{% endif %}">Expenses</a>
+            <a href="{{ url_for('debts') }}" class="tab {% if request.endpoint == 'debts' %}active{% endif %}">Debts</a>
+            <a href="{{ url_for('reports') }}" class="tab {% if request.endpoint == 'reports' %}active{% endif %}">Reports</a>
+            <a href="{{ url_for('profile') }}" class="tab {% if request.endpoint == 'profile' %}active{% endif %}">Profile</a>
+            <a href="{{ url_for('logout') }}" class="tab" style="background-color: #f8d7da; color: #721c24;">Logout</a>
+        </div>
+
+        <div class="card">
+            <h2>Filter Reports by Date</h2>
+            <form method="GET" action="{{ url_for('reports') }}" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="start_date" class="form-label">From:</label>
+                    <input type="date" name="start_date" id="start_date" class="form-control" value="{{ start_date }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="end_date" class="form-label">To:</label>
+                    <input type="date" name="end_date" id="end_date" class="form-control" value="{{ end_date }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                </div>
+                <div class="col-md-2">
+                    <a href="{{ url_for('reports') }}" class="btn btn-secondary w-100">Reset</a>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Financial Summary</h2>
+            <p class="text-muted">Showing results from {{ start_date }} to {{ end_date }}</p>
+            <div class="row g-4 mt-3">
+                <div class="col-md-4">
+                    <div class="summary-card">
+                        <h3>Gross Revenue</h3>
+                        <p>₦{{ '%.2f'|format(report.gross_revenue) }}</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="summary-card">
+                        <h3>Cost of Goods Sold</h3>
+                        <p>₦{{ '%.2f'|format(report.cogs) }}</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="summary-card">
+                        <h3>Gross Profit</h3>
+                        <p>₦{{ '%.2f'|format(report.gross_profit) }}</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="summary-card">
+                        <h3>Operating Expenses</h3>
+                        <p>₦{{ '%.2f'|format(report.total_expenses) }}</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="summary-card">
+                        {% if report.net_profit >= 0 %}
+                            <h3>Net Profit</h3>
+                            <p class="profit">₦{{ '%.2f'|format(report.net_profit) }}</p>
+                        {% else %}
+                            <h3>Net Loss</h3>
+                            <p class="loss">₦{{ '%.2f'|format(report.net_profit * -1) }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="summary-card">
+                        <h3>Pending Debts</h3>
+                        <p>₦{{ '%.2f'|format(report.pending_debt) }}</p>
+                    </div>
+                </div>
+            </div>
+             <a href="{{ url_for('export_sales', start_date=start_date, end_date=end_date) }}" class="btn btn-dark mt-4">📥 Export Sales Report</a>
+        </div>
+    </div>
+</body>
+</html>

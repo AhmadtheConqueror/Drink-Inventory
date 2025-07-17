@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Inventory - Belloson Drinks</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+    <button id="darkModeToggle" style="position: fixed; top: 15px; right: 20px; z-index: 1000;">
+        🌙 Toggle Dark Mode
+    </button>
+    <style>
+        /* Custom styles for the modal */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1050; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 15px;
+            animation: fade-in-up 0.4s ease;
+        }
+        .modal-header {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        .modal-body ul { list-style-type: none; padding-left: 0; }
+        .modal-body ul li { border-bottom: 1px solid #ddd; padding: 8px 0; }
+        .modal-footer {
+            padding: 10px 15px;
+            border-top: 1px solid #eee;
+            text-align: right;
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            border: none;
+            background: none;
+            cursor: pointer;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        body.dark-mode .modal-content {
+            background-color: var(--card-bg-dark);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Belloson Drinks Inventory</h1>
+    
+    <div class="tabs">
+        <a href="{{ url_for('inventory') }}" class="tab {% if request.endpoint == 'inventory' %}active{% endif %}">Inventory</a>
+        <a href="{{ url_for('products') }}" class="tab {% if request.endpoint == 'products' %}active{% endif %}">Products</a>
+        <a href="{{ url_for('customers') }}" class="tab {% if request.endpoint == 'customers' %}active{% endif %}">Customers</a>
+        <a href="{{ url_for('invoices') }}" class="tab {% if request.endpoint == 'invoices' %}active{% endif %}">Invoices</a>
+        <a href="{{ url_for('expenses') }}" class="tab {% if request.endpoint == 'expenses' %}active{% endif %}">Expenses</a>
+        <a href="{{ url_for('debts') }}" class="tab {% if request.endpoint == 'debts' %}active{% endif %}">Debts</a>
+        <a href="{{ url_for('reports') }}" class="tab {% if request.endpoint == 'reports' %}active{% endif %}">Reports</a>
+        <a href="{{ url_for('profile') }}" class="tab {% if request.endpoint == 'profile' %}active{% endif %}">Profile</a>
+        <a href="{{ url_for('logout') }}" class="tab" style="background-color: #f8d7da; color: #721c24;">Logout</a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Product Add to Cart Form -->
+    <div class="card">
+        <h2>Make a Sale</h2>
+        <form action="{{ url_for('add_to_cart') }}" method="POST" class="form-row">
+            <select name="product_id" required>
+                <option value="" disabled selected>-- Select Product --</option>
+                {% for product in products %}
+                <option value="{{ product.id }}">{{ product.name }} (₦{{ "%.2f"|format(product.selling_price) }}) - Stock: {{ product.quantity }}</option>
+                {% endfor %}
+            </select>
+            <input type="number" name="quantity" min="1" placeholder="Quantity" required>
+            <button type="submit" class="btn btn-success">Add to Cart</button>
+        </form>
+    </div>
+
+    <!-- Cart Table -->
+    <div class="card">
+        <h2>Current Cart</h2>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Qty</th>
+                        <th>Unit Price</th>
+                        <th>Total</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in cart %}
+                    <tr>
+                        <td>{{ item.product_name }}</td>
+                        <form action="{{ url_for('update_cart_quantity') }}" method="POST" style="display:contents;">
+                            <td>
+                                <input type="number" name="quantity" value="{{ item.quantity }}" min="1" style="width: 80px;">
+                                <input type="hidden" name="product_id" value="{{ item.product_id }}">
+                            </td>
+                            <td>₦{{ "%.2f"|format(item.unit_price) }}</td>
+                            <td>₦{{ "%.2f"|format(item.total_price) }}</td>
+                            <td>
+                                <button class="btn btn-secondary" type="submit">Update</button>
+                                <a href="{{ url_for('remove_from_cart', index=loop.index0) }}" class="btn btn-danger">Remove</a>
+                            </td>
+                        </form>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center;">Cart is empty.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                {% if cart %}
+                <tfoot>
+                    <tr style="font-weight: bold;">
+                        <td colspan="3" style="text-align: right;">Total:</td>
+                        <td colspan="2">₦{{ "%.2f"|format(cart_total) }}</td>
+                    </tr>
+                </tfoot>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+
+    <!-- Customer & Finalize Purchase -->
+    {% if cart %}
+    <div class="card">
+        <h2>Finalize Purchase</h2>
+        <form action="{{ url_for('finalize_purchase') }}" method="POST" class="form-row">
+            <select name="customer_type" id="customer_type" required>
+                <option value="walkin">Walk-in Customer</option>
+                <option value="registered">Registered Customer</option>
+            </select>
+            <div id="customer_select" style="display: none; flex: 2;">
+                <select name="customer_id">
+                    <option value="">-- Choose Customer --</option>
+                    {% for customer in customers %}
+                        <option value="{{ customer.id }}">{{ customer.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Finalize Purchase</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Receipt Modal -->
+    {% if receipt %}
+    <div class="modal" id="receiptModal" style="display:block;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Receipt</h2>
+                <!-- FIX: Replaced function call with direct URL -->
+                <button class="close-button" onclick="window.location.href='{{ url_for('inventory') }}'">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Customer:</strong> {{ receipt.customer }}</p>
+                <p><strong>Date:</strong> {{ receipt.date }}</p>
+                <ul>
+                    {% for item in receipt['items'] %}
+                        <li>{{ item.product_name }} x{{ item.quantity }} — ₦{{ "%.2f"|format(item.total_price) }}</li>
+                    {% endfor %}
+                </ul>
+                <p><strong>Total: ₦{{ "%.2f"|format(receipt.total) }}</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button onclick="window.print()" class="btn btn-secondary">Print</button>
+                <!-- FIX: Replaced function call with direct URL -->
+                <button onclick="window.location.href='{{ url_for('inventory') }}'" class="btn btn-primary">Close</button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    // This script now only handles the customer dropdown logic
+    document.addEventListener('DOMContentLoaded', function() {
+        const typeSelect = document.getElementById('customer_type');
+        const customerSelectDiv = document.getElementById('customer_select');
+
+        if (typeSelect) {
+            typeSelect.addEventListener('change', function () {
+                customerSelectDiv.style.display = (this.value === 'registered') ? 'flex' : 'none';
+            });
+             // Initial check
+            customerSelectDiv.style.display = (typeSelect.value === 'registered') ? 'flex' : 'none';
+        }
+    });
+
+    // The closeModal function has been removed to prevent conflicts.
+</script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Invoices</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+    <button id="darkModeToggle" style="position: fixed; top: 15px; right: 20px; z-index: 1000;">
+        🌙 Toggle Dark Mode
+    </button>
+</head>
+<body>
+    <div class="container">
+        <h1>Sales Invoices</h1>
+
+        <!-- FIX: Standardized the navigation tabs -->
+        <div class="tabs">
+            <a href="{{ url_for('inventory') }}" class="tab {% if request.endpoint == 'inventory' %}active{% endif %}">Inventory</a>
+            <a href="{{ url_for('products') }}" class="tab {% if request.endpoint == 'products' %}active{% endif %}">Products</a>
+            <a href="{{ url_for('customers') }}" class="tab {% if request.endpoint == 'customers' %}active{% endif %}">Customers</a>
+            <a href="{{ url_for('invoices') }}" class="tab {% if request.endpoint == 'invoices' %}active{% endif %}">Invoices</a>
+            <a href="{{ url_for('expenses') }}" class="tab {% if request.endpoint == 'expenses' %}active{% endif %}">Expenses</a>
+            <a href="{{ url_for('debts') }}" class="tab {% if request.endpoint == 'debts' %}active{% endif %}">Debts</a>
+            <a href="{{ url_for('reports') }}" class="tab {% if request.endpoint == 'reports' %}active{% endif %}">Reports</a>
+            <a href="{{ url_for('profile') }}" class="tab {% if request.endpoint == 'profile' %}active{% endif %}">Profile</a>
+            <a href="{{ url_for('logout') }}" class="tab" style="background-color: #f8d7da; color: #721c24;">Logout</a>
+        </div> 	
+
+        <div class="card">
+            <h2>Filter Invoices</h2>
+            <!-- FIX: Using the custom form-row class for consistent layout -->
+            <form method="get" class="form-row">
+                <input type="text" name="customer" placeholder="Filter by customer name..." value="{{ request.args.get('customer', '') }}">
+                <input type="date" name="date" value="{{ request.args.get('date', '') }}">
+                <button type="submit" class="btn btn-primary">Filter</button>
+                <a href="{{ url_for('invoices') }}" class="btn btn-secondary">Reset</a>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>All Invoices</h2>
+            <div class="table-responsive">
+                <!-- FIX: Relying on custom style.css for table styling -->
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Customer</th>
+                            <th>Date</th>
+                            <th>Total (₦)</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sale in sales %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ sale.customer.name if sale.customer else "Walk-in Customer" }}</td>
+                            <td>{{ sale.date.strftime("%Y-%m-%d %H:%M") }}</td>
+                            <td>{{ "{:,.2f}".format(sale.total_amount) }}</td>
+                            <td>
+                                <!-- FIX: Using custom button classes -->
+                                <a href="{{ url_for('download_receipt', sale_id=sale.id) }}" class="btn" style="background-color: #17a2b8;">View</a>
+                                <a href="{{ url_for('download_receipt_pdf', sale_id=sale.id) }}" class="btn btn-secondary">PDF</a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" style="text-align: center;">No invoices found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

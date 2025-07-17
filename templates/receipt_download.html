@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Receipt for Sale #{{ sale.id }}</title>
+    <style>
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 12px;
+            color: #333;
+            margin: 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            border: 1px solid #eee;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #000;
+        }
+        .header p {
+            margin: 2px 0;
+            font-size: 11px;
+        }
+        .receipt-details {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .receipt-details p {
+            margin: 5px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            border-bottom: 2px solid #333;
+        }
+        td {
+            border-bottom: 1px solid #eee;
+        }
+        .total-row {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 10px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>BELLOSON MULTIBUSINESS</h1>
+            <p>NEW GRA DASS PARK</p>
+            <p>+234 814 424 0971</p>
+        </div>
+
+        <div class="receipt-details">
+            <p><strong>Receipt ID:</strong> {{ sale.id }}</p>
+            <p><strong>Customer:</strong> {{ sale.customer.name if sale.customer else "Walk-in Customer" }}</p>
+            <p><strong>Date:</strong> {{ sale.date.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Qty</th>
+                    <th>Unit Price</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in sale.items %}
+                <tr>
+                    <td>{{ item.product.name }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>₦{{ "%.2f"|format(item.unit_price) }}</td>
+                    <td>₦{{ "%.2f"|format(item.quantity * item.unit_price) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td colspan="3" style="text-align: right; border: none;">Grand Total:</td>
+                    <td style="border-top: 2px solid #333;">₦{{ "%.2f"|format(sale.total_amount) }}</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="footer">
+            <p>Thank you for your patronage!</p>
+        </div>
+    </div>
+</body>
+</html>
